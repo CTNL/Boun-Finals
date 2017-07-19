@@ -1,0 +1,74 @@
+---
+title: "Piecewise Regression"
+output: html_notebook
+---
+
+First, let’s generate some segmented data:
+```{r}
+x <- c(1:10, 13:22)
+y <- numeric(20)
+## Create first segment
+y[1:10] <- 20:11 + rnorm(10, 0, 1.5)
+## Create second segment
+y[11:20] <- seq(11, 15, len=10) + rnorm(10, 0, 1.5)
+## Plot it
+par(mar=c(4,4,1,1)+0.2)
+plot(x,y, ylim=c(5, 20), pch=16)
+```
+You should get a V-shaped plot, where the right side is a little shallower sloped.
+
+# METHOD 1: ITERATIVE SEARCHING
+
+Now we’re going to iteratively search these breakpoints for the model that has the lowest residual MSE, using that as our criteria for the best model. Create an empty container for MSE values from each model, and use a for( ) loop to run a linear regression for each possible breakpoint. Formulate the linear model exactly like the above formula.
+
+```{r}
+breaks <- x[which(x >= 9 & x <= 17)]
+
+mse <- numeric(length(breaks))
+for(i in 1:length(breaks)){
+ piecewise1 <- lm(y ~ x*(x < breaks[i]) + x*(x>=breaks[i]))
+ mse[i] <- summary(piecewise1)[6]
+}
+mse <- as.numeric(mse)
+plot(breaks, mse)
+```
+It is just pick the breakpoint with the lowest error:
+```{r}
+break.point = breaks[which(mse==min(mse))]
+paste("Break point is", break.point)
+
+piecewise2 <- lm(y ~ x*(x < break.point) + x*(x > break.point))
+summary(piecewise2)
+```
+
+```{r}
+cf <- coef(piecewise2)
+plot(x,y, ylim=c(5, 20), pch=16)
+curve((cf[1] + cf[3]) + (cf[2] + cf[5])*x, add=T, from=1, to=break.point)
+curve((cf[1] - cf[4]) + cf[2]*x, add=T, from=break.point, to=max(x))
+abline(v=break.point, lty=3)
+```
+Notice that the segments were not constrained to be touching or continuous. This is inherent in the algorithm that we used.
+
+# METHOD 2: USE ‘SEGMENTED’ PACKAGE
+
+To use this method, you first fit a generic linear model. You then use the segmented( ) function to fit the piecewise regression. The segmented( ) function takes for its arguments the generic linear model, seg.Z which is a one sided formula describing the predictor with a segment (we only have one predictor, x, which has the segment), and psi, which is a starting value of the breakpoint (as in nls( ), you need to supply a best-guess estimate). More complicated models are a bit more complicated in terms of arguments, but this is a good starting example.
+
+In our case, x is the predictor with a segment (it’s the only predictor) and based on my very first scatterplot (the first graph on the page), I’m going to guess the breakpoint is 14.
+
+```{r}
+library(segmented)
+lin.mod <- lm(y~x)
+segmented.mod <- segmented(lin.mod, seg.Z = ~x, psi=14)
+
+summary(segmented.mod)
+```
+Using the summary(segmented.mod) command, you will get the estimated breakpoint +/- some error, the intercept and slope for the first segment, and U1.x, which is the slope of the second segment.
+```{r}
+plot(x,y, pch=16, ylim=c(5,20))
+plot(segmented.mod, add=T)
+```
+
+There you go: two methods for piecewise regression. Each is relatively simple to implement, but they do very different things. If you are dead set on piecewise regression, make sure you choose the one that makes the most sense for your question: do the segments need to be continuous or can they be discontinuous? Make sure you have a rationale for either.
+
+Also note that these models are not nested, so you can’t used likelihood ratio tests for model selection. You can try to use AIC for model selection, but I advise you to think logically about the continuity of the segments instead.
