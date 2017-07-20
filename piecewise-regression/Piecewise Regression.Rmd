@@ -3,6 +3,8 @@ title: "Piecewise Regression"
 output: html_notebook
 ---
 
+Reference: https://www.r-bloggers.com/r-for-ecologists-putting-together-a-piecewise-regression/
+
 First, let’s generate some segmented data:
 ```{r}
 x <- c(1:10, 13:22)
@@ -15,7 +17,7 @@ y[11:20] <- seq(11, 15, len=10) + rnorm(10, 0, 1.5)
 par(mar=c(4,4,1,1)+0.2)
 plot(x,y, ylim=c(5, 20), pch=16)
 ```
-You should get a V-shaped plot, where the right side is a little shallower sloped.
+Data has a V-shaped plot, where the right side is a little shallower sloped.
 
 # METHOD 1: ITERATIVE SEARCHING
 
@@ -45,7 +47,7 @@ summary(piecewise2)
 cf <- coef(piecewise2)
 plot(x,y, ylim=c(5, 20), pch=16)
 curve((cf[1] + cf[3]) + (cf[2] + cf[5])*x, add=T, from=1, to=break.point)
-curve((cf[1] - cf[4]) + cf[2]*x, add=T, from=break.point, to=max(x))
+curve((cf[1] + cf[4]) + cf[2]*x, add=T, from=break.point, to=max(x))
 abline(v=break.point, lty=3)
 ```
 Notice that the segments were not constrained to be touching or continuous. This is inherent in the algorithm that we used.

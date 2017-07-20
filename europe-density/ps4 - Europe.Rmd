@@ -1,0 +1,67 @@
+---
+title: "Import Excel"
+author: "Yiðit Çetinel"
+date: "12 Nisan 2017"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(readxl)
+europe <- read_excel("europe.xlsx")
+```
+
+## How to import Excel file into R
+
+1. Use "Import Dataset" under Environment tab
+2. Click "From Excel"
+3. Click "Browse" and select "europe.xlsx" from where you locate it
+4. Change name as "europe" and click "Import"
+
+```{r}
+View(europe)
+```
+
+Check the column names:
+
+```{r}
+names(europe)
+```
+
+Second one and fourth one look complicated, so we can change the column names:
+
+```{r}
+names(europe)[2] <- "Area"
+names(europe)[4] <- "Density"
+```
+
+Check the head of the data now:
+
+```{r}
+head(europe)
+```
+
+Let us plot Area vs Population of the europe data:
+
+```{r}
+plot(Area ~ Population, europe, col="red", pch=16, cex=.6)
+text(Area ~ Population, europe, labels=Name, cex=.6)
+```
+
+Linear regression using Area and Population:
+
+```{r}
+model <- lm(Area ~ Population, europe)
+plot(Area ~ Population, europe, col="red")
+abline(model, col="blue")
+```
+
+The model is not good because of the last data (Russia). Let us try again without it.
+
+```{r}
+europeWithoutRussia <- subset(europe, Name!="Russia")
+model <- lm(Area ~ Population, europeWithoutRussia)
+plot(Area ~ Population, europeWithoutRussia, col="red",pch=16,cex=.6)
+text(Area ~ Population, europeWithoutRussia, labels=Name,cex=.6)
+abline(model, col="blue")
+```
